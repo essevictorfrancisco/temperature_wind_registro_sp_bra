@@ -2,12 +2,16 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
-def plotar_rosa_dos_ventos(df: pd.DataFrame, titulo: str = 'Rosa dos Ventos') -> None:
+def plotar_rosa_dos_ventos(
+    df: pd.DataFrame, titulo: str = 'Rosa dos Ventos'
+) -> None:
     """
-    Gera gráfico tipo rosa dos ventos (wind rose) a partir de DataFrame com colunas específicas.
+    Gera gráfico tipo rosa dos ventos (wind rose) a partir de DataFrame com
+    colunas específicas.
     
     Parâmetros:
-        df (pd.DataFrame): DataFrame contendo colunas 'Wind Direction' e 'Wind Speed'
+        df (pd.DataFrame): DataFrame contendo colunas 'Wind Direction' e
+        'Wind Speed'
         titulo (str): Título do gráfico
         
     Retorno:
@@ -16,7 +20,9 @@ def plotar_rosa_dos_ventos(df: pd.DataFrame, titulo: str = 'Rosa dos Ventos') ->
     # Verificação das colunas necessárias
     colunas_necessarias = {'Wind Direction', 'Wind Speed'}
     if not colunas_necessarias.issubset(df.columns):
-        raise ValueError(f"DataFrame precisa conter colunas: {colunas_necessarias}")
+        raise ValueError(
+            f"DataFrame precisa conter colunas: {colunas_necessarias}"
+        )
     
     # Configuração das bins
     direcoes_bins = np.arange(0, 375, 15)  # 0-360° em passos de 15°
@@ -73,6 +79,10 @@ def plotar_rosa_dos_ventos(df: pd.DataFrame, titulo: str = 'Rosa dos Ventos') ->
     ])
     
     ax.set_title(titulo, pad=35, fontsize=14)
-    ax.legend(bbox_to_anchor=(1.15, 1), loc='upper left', title='Velocidade do Vento')
+    ax.legend(
+        bbox_to_anchor=(1.15, 1),
+        loc='upper left',
+        title='Velocidade do Vento'
+    )
     
     plt.show()
