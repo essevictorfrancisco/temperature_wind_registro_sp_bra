@@ -119,4 +119,11 @@ for key, value in my_csv.items():
         new_df.dropna(inplace=True)
         new_df.to_csv(f'{export_folder}{key}_{name}.csv')
 
+# carregando o dados salvos
+climate_data = load_climate_data()
+
+# criar os climogramas
+for key in climate_data.keys():
+    gerar_climograma(climate_data[key])
+
 print('\n\nEnd')
