@@ -1,6 +1,10 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
+epw_folder = '../epw_raw/'
+inmet_folder = '../inmet_raw/'
+export_folder = '../climate_csv/'
+
 def load_climate_data():
     # lista dos arquivos
     climate_monthly_files = [
@@ -52,7 +56,7 @@ def gerar_climograma(df):
     
     # Criar eixo de precipitação (eixo direito)
     ax1.bar(
-        df['Mês'], df['Chuva_tot'],
+        df['Mês'], df['Precipitacao'],
         width=0.75, alpha=1.0, color='#2385CC', label='Precipitação'
     )
     
@@ -87,7 +91,7 @@ def gerar_climograma(df):
     
     for mes in range(df.shape[0]):
         ax1.annotate(
-            text=str(df.at[mes,'Chuva_tot']),
+            text=str(df.at[mes,'Precipitacao']),
             color='white',
             horizontalalignment='center',
             xy=(mes,10),
@@ -113,3 +117,12 @@ def gerar_climograma(df):
     
     plt.savefig(f'../img/{df.attrs['file_name']}.png')
     # plt.show()
+
+# carregando o dados salvos
+climate_data = load_climate_data()
+
+# criar os climogramas
+for key in climate_data.keys():
+    gerar_climograma(climate_data[key])
+
+print('.\n.\n.\nCódigo concluído.')

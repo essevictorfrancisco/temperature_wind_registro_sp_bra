@@ -4,7 +4,11 @@ Módulo para processamento de dados climáticos em formato EPW e INMET.
 
 from pathlib import Path
 import pandas as pd
+import numpy as np
 
+epw_folder = '../epw_raw/'
+inmet_folder = '../inmet_raw/'
+export_folder = '../climate_csv/'
 
 def epw_to_pandas(epw_path: str) -> pd.DataFrame | None:
     """
@@ -121,6 +125,39 @@ def inmet_to_pandas(file_path: str | Path) -> pd.DataFrame:
 
     return df[df[df.columns[2]].notna()]
 
+def set_wind_direction(wind_series: pd.Series) -> pd.Series:
+    """Converte direção angular do vento em orientação categórica (8 pontos cardeais).
+
+    Args:
+        wind_series (pd.Series): Série contendo ângulos de direção do vento em graus (0-360).
+
+    Returns:
+        pd.Series: Série categórica com direções em português ('N', 'NE', ..., 'NO').
+
+    Exemplos:
+        >>> direcoes = pd.Series([0, 90, 180, 270, 350])
+        >>> set_wind_direction(direcoes)
+        0     N
+        1     L
+        2     S
+        3     O
+        4     N
+        dtype: category
+    """
+    # Mapeamento de setores para direções
+    direcoes = ['N', 'NE', 'L', 'SE', 'S', 'SO', 'O', 'NO']
+    
+    # Ajuste para alinhar setores de 45° com os pontos cardeais
+    angulos_ajustados = (wind_series + 22.5) % 360
+    setores = np.floor(angulos_ajustados / 45)#.astype('int32')
+    
+    # Criar série categórica ordenada
+    return pd.Categorical(
+        values=pd.Series(setores).map(dict(enumerate(direcoes))),
+        categories=direcoes,
+        ordered=True
+    )
+
 def slice_dataframe(
     dataframe: pd.DataFrame,
     columns: list[str],
@@ -219,44 +256,106 @@ def save_as_csv(dataframe: pd.DataFrame, folder_path: str) -> None:
     else:
         raise ValueError("DataFrame inválido ou vazio para exportação")
 
+# definir pasta de trabalho
+epw_folder = '../epw_raw/'
+inmet_folder = '../inmet_raw/'
+export_folder = '../climate_csv/'
 
-if __name__ == '__main__':
-    try:
-        # Processamento principal
-        iguape_epw = epw_to_pandas(
-            '../climate_raw/BRA_SP_Iguape.869230_TMYx.2009-2023.epw'
-        )
+# limpando o EPW
+iguape_old_epw = epw_to_pandas(
+    f'{epw_folder}BRA_SP_Iguape.869230_TMYx.2009-2023.epw'
+)
+
+iguape_epw = slice_dataframe(
+    dataframe=iguape_old_epw,
+    columns=[
+        'Datetime', 'Dry Bulb Temperature', 'Relative Humidity',
+        'Wind Speed', 'Wind Direction', 'Liquid Precipitation Depth'
+    ],
+    name='iguape_epw'
+)
+
+# renomeando as colunas
+iguape_epw.columns = [
+    'Datetime', 'Temp', 'Umi', 'Vel_vento', 'Dir_vento', 'Precipitacao'
+]
+
+# adicionar orientação da ventilação
+ori_vento = 'Ori_vento'
+iguape_epw[ori_vento] = set_wind_direction(iguape_epw['Dir_vento'])
+
+# salvar arquivo
+iguape_epw.attrs['Name'] = 'iguape_epw'
+save_as_csv(iguape_epw,export_folder)
+print(f'{iguape_epw.attrs["Name"]} foi salvo.')
+
+del iguape_old_epw
+
+# limpando os arquivos INMET
+# definindo os arquivos para importação
+inmet_2019 = {'inmet_2019':('a712_iguape_2019a','a712_iguape_2019b')}
+inmet_2020 = {'inmet_2020':('a712_iguape_2020a','a712_iguape_2020b')}
+inmet_2021 = {'inmet_2021':('a712_iguape_2021a','a712_iguape_2021b')}
+inmet_2022 = {'inmet_2022':('a712_iguape_2022a','a712_iguape_2022b')}
+inmet_2023 = {'inmet_2023':('a712_iguape_2023a','a712_iguape_2023b')}
+inmet_2024 = {'inmet_2024':('a712_iguape_2024a','a712_iguape_2024b')}
+
+inmet_dados = (
+    inmet_2019,inmet_2020,inmet_2021,inmet_2022,inmet_2023,inmet_2024
+)
+
+# criar os dataframes
+for item in inmet_dados:
+    for key in item.keys():
+        df1 = inmet_to_pandas(f'{inmet_folder}{item[key][0]}.csv')
+        df2 = inmet_to_pandas(f'{inmet_folder}{item[key][1]}.csv')
+        # juntando os dataframes
+        df3 = pd.concat([df1,df2])
+        # dando um nome para o dataframe
+        df3.attrs['Name'] = key
+        # selecionando as colunas usadas
+        df3 = df3[[
+            'Datetime', 'Temp. Ins. (C)', 'Umi. Ins. (%)', 'Vel. Vento (m/s)',
+            'Dir. Vento (m/s)', 'Chuva (mm)'
+        ]]
+        # renomeando as colunas
+        df3.columns = [
+            'Datetime', 'Temp', 'Umi', 'Vel_vento', 'Dir_vento', 'Precipitacao'
+        ]
+
+        # adicionar orientação do vento
+        df3[ori_vento] = set_wind_direction(df3['Dir_vento'])
         
-        iguape_allhours = slice_dataframe(
-            iguape_epw,
-            columns=[
-                'Datetime', 'Dry Bulb Temperature', 'Relative Humidity',
-                'Wind Direction', 'Wind Speed'
-            ],
-            name='all_hours'
-        )
+        # removendo as colunas vazias
+        df3 = df3[df3['Temp'].notnull()]
+        
+        save_as_csv(df3,export_folder)
+        print(f'{df3.attrs["Name"]} foi salvo.')
+        
+        del df1, df2, df3
 
-        # Processamento de extremos térmicos
-        iguape_cold = slice_sorted_dataframe(
-            iguape_allhours,
-            sort_by='Dry Bulb Temperature',
-            ascending=True,
-            percent=0.1,
-            name='cold_hours'
-        )
+# novos dataframes com os 10% mais quente e frio
+iguape_10p_cold = slice_sorted_dataframe(
+    dataframe=iguape_epw,
+    sort_by='Temp',
+    ascending=True,
+    percent=0.1,
+    name='iguape_cold_hours'
+)
 
-        iguape_hot = slice_sorted_dataframe(
-            iguape_allhours,
-            sort_by='Dry Bulb Temperature',
-            ascending=False,  # Corrigido para pegar maiores valores
-            percent=0.1,
-            name='hot_hours'
-        )
+iguape_10p_hot = slice_sorted_dataframe(
+    dataframe=iguape_epw,
+    sort_by='Temp',
+    ascending=False,
+    percent=0.1,
+    name='iguape_hot_hours'
+)
 
-        # Exportação dos dados
-        for df in [iguape_allhours, iguape_cold, iguape_hot]:
-            if df is not None:
-                save_as_csv(df, '../climate_csv/')
+# salvar os DataFrame em csv
+for df in (iguape_10p_cold, iguape_10p_hot):
+    save_as_csv(df, export_folder)
+    # limpando a memoria
+    print(f'{df.attrs["Name"]} foi salvo.')
+    del df
 
-    except Exception as main_error:
-        print(f"Erro no processamento principal: {main_error}")
+print('.\n.\n.\nCódigo concluído.')

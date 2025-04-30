@@ -1,5 +1,5 @@
-**/.ipynb*
 **/__pycache__
 tmp/
 .ipynb_checkpoints/
 .virtual_documents/
+.venv/
