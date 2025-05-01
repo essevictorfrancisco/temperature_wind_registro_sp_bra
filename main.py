@@ -26,7 +26,7 @@ def main() -> None:
         df = load_inmet(f'a712_iguape_{ano}a', f'a712_iguape_{ano}b', RAW_INMET_DIR)
         if df is None or df.empty:
             raise ValueError(f"Falha ao carregar dados do INMET {ano}.")
-        save_dataframe(df, f'inmet_{ano}', EXPORT_DIR)
+        save_dataframe(df, f'inmet_{ano}_horaria', EXPORT_DIR)
 
     # Agregações por período
     periods = {'diaria': 'D', 'semanal': 'W', 'mensal': 'ME'}

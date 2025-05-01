@@ -3,9 +3,12 @@ import matplotlib.pyplot as plt
 from windrose import WindroseAxes
 from pathlib import Path
 
-EXPORT_DIR = Path(__file__).resolve().parent.parent / 'climate_csv'
+EXPORT_DIR = Path(__file__).resolve().parent.parent / 'data_processed'
 IMG_DIR = Path(__file__).resolve().parent.parent / 'img'
 IMG_DIR.mkdir(parents=True, exist_ok=True)
+
+ORDERED_WIND_DIRECTIONS = ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO']
+
 
 def load_wind_data(files: list[str]) -> dict:
     """
@@ -37,6 +40,7 @@ def load_wind_data(files: list[str]) -> dict:
         data[name] = df
     return data
 
+
 def plot_windrose(df: pd.DataFrame) -> None:
     """
     Gera e salva uma rosa dos ventos a partir do DataFrame.
@@ -54,11 +58,13 @@ def plot_windrose(df: pd.DataFrame) -> None:
     ax = WindroseAxes.from_ax()
     ax.bar(direction, wind, normed=True, opening=0.8, edgecolor='white')
     ax.set_legend()
+    ax.set_xticklabels(ORDERED_WIND_DIRECTIONS)  # Aplica ordenação
     plt.title(df.attrs['graph_name'], fontsize=13, pad=20)
 
     output_path = IMG_DIR / f"{df.attrs['file_name']}_windrose.png"
     plt.savefig(output_path)
     plt.close()
+
 
 def main():
     freq_types = ['horaria', 'diaria', 'semanal', 'mensal']
@@ -71,6 +77,7 @@ def main():
     data = load_wind_data(files)
     for name, df in data.items():
         plot_windrose(df)
+
 
 if __name__ == '__main__':
     main()
