@@ -86,8 +86,9 @@ def plot_histogram(df: pd.DataFrame, column: str, bins: int = 30, freq: str = ''
     plt.ylabel('Frequência')
     plt.grid(True, linestyle='--', alpha=0.7)
     plt.tight_layout()
-    filename = f"hist_{df.attrs['file_name']}_{column}.png".lower()
-    plt.savefig(IMG_DIR / filename)
+    for ext in ['png', 'svg']:
+        filename = f"hist_{df.attrs['file_name']}_{column}.{ext}".lower()
+        plt.savefig(IMG_DIR / filename)
     plt.close()
 
 def main():

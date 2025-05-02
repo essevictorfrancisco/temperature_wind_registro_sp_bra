@@ -1,4 +1,3 @@
-# viz/temperature_boxplot.py
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -64,9 +63,10 @@ def plot_boxplot(df: pd.DataFrame) -> None:
     ax.set_ylabel('Temperatura (°C)')
     ax.set_ylim(0, 50)
     plt.tight_layout()
-
-    output = IMG_DIR / f"boxplot_temp_{df.attrs['file_name']}.svg"
-    fig.savefig(output, dpi=300)
+    
+    for ext in ['png', 'svg']:
+        output = IMG_DIR / f"boxplot_temp_{df.attrs['file_name']}.{ext}'"
+        fig.savefig(output, dpi=300)
     plt.close(fig)
     print(f"Salvo boxplot: {output}")
 
@@ -99,8 +99,9 @@ def plot_monthly_boxplot(df: pd.DataFrame) -> None:
     ax.set_ylim(0, 50)
     plt.tight_layout()
 
-    output = IMG_DIR / f"boxplot_temp_monthly_{df.attrs['file_name']}.png"
-    fig.savefig(output, dpi=300)
+    output = IMG_DIR / f"boxplot_temp_monthly_{df.attrs['file_name']}."
+    fig.savefig(output+'png', dpi=300)
+    fig.savefig(output+'svg', dpi=300)
     plt.close(fig)
     print(f"Salvo boxplot mensal: {output}")
 

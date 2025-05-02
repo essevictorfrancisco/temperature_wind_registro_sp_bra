@@ -1,4 +1,3 @@
-
 import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
@@ -93,9 +92,10 @@ class ClimographGenerator:
         ax2.spines['top'].set_visible(False)
         plt.title(df.attrs['graph_name'], fontsize=14, pad=20)
         plt.tight_layout()
-
-        output_path = self.img_dir / f"climograma_{df.attrs['file_name']}.png"
-        plt.savefig(output_path)
+        
+        for ext in ['png', 'svg']:
+            output_path = self.img_dir / f"climograma_{df.attrs['file_name']}.{ext}"
+            plt.savefig(output_path)
         plt.close()
 
 def main() -> None:

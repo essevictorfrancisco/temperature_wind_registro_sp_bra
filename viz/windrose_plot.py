@@ -53,9 +53,9 @@ def plot_windrose(df: pd.DataFrame) -> None:
     ax.set_xticks(np.deg2rad(DIRECTION_BINS[:-1]))
     ax.set_xticklabels(ORDERED_WIND_DIRECTIONS)
     ax.set_title(df.attrs['graph_name'], va='bottom', fontsize=12)
-
-    output = IMG_DIR / f"windrose_{df.attrs['file_name']}.png"
-    plt.savefig(output, dpi=300, bbox_inches='tight')
+    for ext in ['png', 'svg']:
+        output = IMG_DIR / f"windrose_{df.attrs['file_name']}.{ext}"
+        plt.savefig(output, dpi=300, bbox_inches='tight')
     plt.close(fig)
 
 
@@ -77,9 +77,9 @@ def plot_windrose_categorical(df: pd.DataFrame) -> None:
     ax.set_xticks(np.deg2rad(DIRECTION_BINS[:-1]))
     ax.set_xticklabels(ORDERED_WIND_DIRECTIONS)
     ax.set_title(df.attrs['graph_name'] + ' (categorical)', va='bottom', fontsize=12)
-
-    output = IMG_DIR / f"windrose_cat_{df.attrs['file_name']}.png"
-    plt.savefig(output, dpi=300, bbox_inches='tight')
+    for ext in ['png', 'svg']:
+        output = IMG_DIR / f"windrose_cat_{df.attrs['file_name']}.{ext}"
+        plt.savefig(output, dpi=300, bbox_inches='tight')
     plt.close(fig)
 
 
@@ -105,8 +105,9 @@ def plot_monthly_windrose(df: pd.DataFrame) -> None:
         ax.set_xticklabels(ORDERED_WIND_DIRECTIONS)
         ax.set_title(MONTH_MAP.get(month, str(month)), y=1.1)
     plt.tight_layout()
-    output = IMG_DIR / f"windrose_monthly_{df.attrs['file_name']}.png"
-    plt.savefig(output, dpi=300)
+    for ext in ['png', 'svg']:
+        output = IMG_DIR / f"windrose_monthly_{df.attrs['file_name']}.{ext}"
+        plt.savefig(output, dpi=300)
     plt.close(fig)
 
 
