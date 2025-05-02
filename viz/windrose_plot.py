@@ -7,8 +7,12 @@ EXPORT_DIR = Path(__file__).resolve().parent.parent / 'data_processed'
 IMG_DIR = Path(__file__).resolve().parent.parent / 'img'
 IMG_DIR.mkdir(parents=True, exist_ok=True)
 
-ORDERED_WIND_DIRECTIONS = ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO']
+ORDERED_WIND_DIRECTIONS = ['N', 'NE', 'L', 'SE', 'S', 'SO', 'O', 'NO']
 DIRECTION_BINS = np.arange(0, 361, 45)  # 8 bins de 45°
+
+MOD = 100/12
+LOWER_LIMIT = 0
+UPPER_LIMIT = 300 * MOD
 
 # Mapeamento para abreviações dos meses
 MONTH_MAP = {
@@ -52,6 +56,7 @@ def plot_windrose(df: pd.DataFrame) -> None:
     ax.bar(angles, counts, width=width, bottom=0.0, color='skyblue', edgecolor='black')
     ax.set_xticks(np.deg2rad(DIRECTION_BINS[:-1]))
     ax.set_xticklabels(ORDERED_WIND_DIRECTIONS)
+    ax.set_ylim(LOWER_LIMIT, UPPER_LIMIT)
     ax.set_title(df.attrs['graph_name'], va='bottom', fontsize=12)
     for ext in ['png', 'svg']:
         output = IMG_DIR / f"windrose_{df.attrs['file_name']}.{ext}"
@@ -76,6 +81,7 @@ def plot_windrose_categorical(df: pd.DataFrame) -> None:
     ax.bar(angles, counts.values, width=width, bottom=0.0, color='skyblue', edgecolor='black')
     ax.set_xticks(np.deg2rad(DIRECTION_BINS[:-1]))
     ax.set_xticklabels(ORDERED_WIND_DIRECTIONS)
+    ax.set_ylim(LOWER_LIMIT, UPPER_LIMIT)
     ax.set_title(df.attrs['graph_name'] + ' (categorical)', va='bottom', fontsize=12)
     for ext in ['png', 'svg']:
         output = IMG_DIR / f"windrose_cat_{df.attrs['file_name']}.{ext}"
@@ -88,6 +94,7 @@ def plot_monthly_windrose(df: pd.DataFrame) -> None:
         return
     df['Month'] = pd.to_datetime(df['Datetime']).dt.month
     fig, axes = plt.subplots(3, 4, subplot_kw={'projection':'polar'}, figsize=(12, 9))
+    fig.suptitle(df.attrs['graph_name'], fontsize=16)#, y=1.02)
     for month in range(1, 13):
         ax = axes.flatten()[month-1]
         sub = df[df['Month'] == month]
@@ -104,9 +111,59 @@ def plot_monthly_windrose(df: pd.DataFrame) -> None:
         ax.set_xticks(np.deg2rad(DIRECTION_BINS[:-1]))
         ax.set_xticklabels(ORDERED_WIND_DIRECTIONS)
         ax.set_title(MONTH_MAP.get(month, str(month)), y=1.1)
-    plt.tight_layout()
+        ax.set_ylim(LOWER_LIMIT, UPPER_LIMIT/MOD)
+    plt.tight_layout(rect=[0, 0, 1, 0.96])  # reserva espaço para o título geral
     for ext in ['png', 'svg']:
         output = IMG_DIR / f"windrose_monthly_{df.attrs['file_name']}.{ext}"
+        plt.savefig(output, dpi=300)
+    plt.close(fig)
+
+def plot_three_windroses(df: pd.DataFrame) -> None:
+    if 'Dir_vento' not in df.columns or 'Vel_vento' not in df.columns or 'Temp' not in df.columns:
+        return
+
+    # Ordena DataFrame pela temperatura
+    hottest_df = df.nlargest(int(len(df) * 0.10), 'Temp')
+    coldest_df = df.nsmallest(int(len(df) * 0.10), 'Temp')
+    all_df = df.copy()
+
+    datasets = [
+        ('10% Mais Quentes', hottest_df),
+        ('Todas as Horas', all_df),
+        ('10% Mais Frias', coldest_df)
+    ]
+
+    fig, axes = plt.subplots(1, 3, subplot_kw={'projection': 'polar'}, figsize=(18, 7))
+    fig.suptitle(f"{df.attrs['graph_name']}: Comparação Temperatura", fontsize=16)
+
+    for ax, (title, subset) in zip(axes, datasets):
+        dirs = subset['Dir_vento'].dropna().values % 360
+        if dirs.size == 0:
+            ax.set_title(title)
+            continue
+
+        counts, _ = np.histogram(dirs, bins=DIRECTION_BINS)
+        angles = np.deg2rad(DIRECTION_BINS[:-1])
+        width = np.deg2rad(45)
+
+        ax.set_theta_zero_location('N')
+        ax.set_theta_direction(-1)
+        ax.bar(angles, counts, width=width, bottom=0.0,
+               color='skyblue', edgecolor='black')
+        ax.set_xticks(np.deg2rad(DIRECTION_BINS[:-1]))
+        ax.set_xticklabels(ORDERED_WIND_DIRECTIONS)
+        ax.set_title(title, y=1.1)
+        
+        if title!='Todas as Horas':
+            upper_limit = UPPER_LIMIT / MOD + 100
+        else:
+            upper_limit = UPPER_LIMIT
+            
+        ax.set_ylim(LOWER_LIMIT, upper_limit)
+
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
+    for ext in ['png', 'svg']:
+        output = IMG_DIR / f"windrose_three_{df.attrs['file_name']}.{ext}"
         plt.savefig(output, dpi=300)
     plt.close(fig)
 
@@ -122,6 +179,7 @@ def main() -> None:
         plot_windrose(df)
         plot_windrose_categorical(df)
         plot_monthly_windrose(df)
+        plot_three_windroses(df)
 
 if __name__ == '__main__':
     main()

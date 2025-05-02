@@ -8,6 +8,7 @@ sys.path.append(str(Path(__file__).resolve().parent / 'src'))
 from loaders.epw_loader import load_epw
 from loaders.inmet_loader import load_inmet
 from processing.aggregation import aggregate_climate_data
+from src.processing.apparent_temperature import calculate_apparent_temperature
 from utils import save_dataframe
 from config import EXPORT_DIR, RAW_INMET_DIR
 
@@ -29,7 +30,7 @@ def main() -> None:
         save_dataframe(df, f'inmet_{ano}_horaria', EXPORT_DIR)
 
     # Agregações por período
-    periods = {'diaria': 'D', 'semanal': 'W', 'mensal': 'ME'}
+    periods = {'horaria':'H', 'diaria': 'D', 'semanal': 'W', 'mensal': 'ME'}
     all_files = ['iguape_epw'] + [f'inmet_{ano}' for ano in inmet_anos]
 
     for file in all_files:
@@ -44,6 +45,7 @@ def main() -> None:
         df['Datetime'] = pd.to_datetime(df['Datetime'], errors='coerce')
         df.dropna(subset=['Datetime'], inplace=True)
         df.set_index('Datetime', inplace=True)
+        df['Sensacao_termica'] = calculate_apparent_temperature(df)
 
         for period_name, freq in periods.items():
             agg_df = aggregate_climate_data(df, freq, f"{file}_{period_name}")
